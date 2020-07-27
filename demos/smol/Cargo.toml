@@ -1,0 +1,15 @@
+[package]
+name = "async-shell-demo-smol"
+version = "0.1.0"
+authors = ["vkill <vkill.net@gmail.com>"]
+edition = "2018"
+
+[[bin]]
+name = "sample"
+path = "src/sample.rs"
+
+[dependencies]
+async-shell = { path = "../..", version = "0.1" }
+async-executor = "0.1.1"
+easy-parallel = "3.1.0"
+async-channel = "1.1.1"

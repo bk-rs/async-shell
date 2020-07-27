@@ -1,0 +1,23 @@
+[package]
+name = "async-shell"
+version = "0.1.0"
+authors = ["vkill <vkill.net@gmail.com>"]
+edition = "2018"
+description = "Asynchronous process child wait."
+license = "Apache-2.0 OR MIT"
+repository = "https://github.com/bk-rs/async-shell"
+homepage = "https://github.com/bk-rs/async-shell"
+documentation = "https://docs.rs/async-shell"
+keywords = ["process"]
+categories = ["asynchronous", "os"]
+readme = "README.md"
+
+[dependencies]
+blocking = { version = "0.5", default-features = false, features = [] }
+wait-timeout = { version = "0.2", default-features = false, features = [] }
+async-trait = { version = "0.1", default-features = false, features = [] }
+
+[workspace]
+members = [
+    "demos/smol",
+]
