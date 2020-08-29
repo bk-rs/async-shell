@@ -9,6 +9,7 @@ use std::thread;
 
 use async_executor::{Executor, LocalExecutor, Task};
 use easy_parallel::Parallel;
+use futures_lite::future::block_on;
 
 use async_shell::ChildExt;
 
@@ -20,21 +21,21 @@ fn main() -> io::Result<()> {
 
     let ret_vec: (_, io::Result<()>) = Parallel::new()
         .each(0..2, |_| {
-            ex.clone().run(async {
+            block_on(ex.clone().run(async {
                 shutdown
                     .recv()
                     .await
                     .map_err(|err| io::Error::new(io::ErrorKind::Other, err))
-            })
+            }))
         })
         .finish(|| {
-            local_ex.run(async {
+            block_on(local_ex.run(async {
                 run(ex.clone()).await?;
 
                 drop(trigger);
 
                 Ok(())
-            })
+            }))
         });
 
     println!("ret_vec: {:?}", ret_vec);
