@@ -3,7 +3,7 @@ use std::process::{Command, ExitStatus, Stdio};
 use std::time::Duration;
 
 use async_trait::async_trait;
-use blocking::Unblock;
+use blocking::unblock;
 use wait_timeout::ChildExt as _;
 
 #[derive(Debug)]
@@ -38,52 +38,51 @@ impl ChildExt for Command {
 
         let mut child = command.spawn()?;
 
-        Unblock::new(())
-            .with_mut(move |_| {
-                if let Some(stdin_bytes) = stdin {
-                    let stdin = match child.stdin.as_mut() {
-                        Some(stdin) => stdin,
-                        None => unreachable!("never"),
-                    };
-                    stdin.write_all(&stdin_bytes[..])?;
-                }
+        unblock(move || {
+            if let Some(stdin_bytes) = stdin {
+                let stdin = match child.stdin.as_mut() {
+                    Some(stdin) => stdin,
+                    None => unreachable!("never"),
+                };
+                stdin.write_all(&stdin_bytes[..])?;
+            }
 
-                let exit_status =
-                    match child.wait_timeout(timeout.unwrap_or(Duration::from_millis(1000)))? {
-                        Some(exit_status) => exit_status,
-                        None => {
-                            // child hasn't exited yet
-                            child.kill()?;
-                            child.wait()?;
+            let exit_status =
+                match child.wait_timeout(timeout.unwrap_or(Duration::from_millis(1000)))? {
+                    Some(exit_status) => exit_status,
+                    None => {
+                        // child hasn't exited yet
+                        child.kill()?;
+                        child.wait()?;
 
-                            return Err(io::Error::new(io::ErrorKind::TimedOut, "run timeout"));
-                        }
-                    };
+                        return Err(io::Error::new(io::ErrorKind::TimedOut, "run timeout"));
+                    }
+                };
 
-                let max_size = max_size.unwrap_or(2048);
-                let mut buf = Vec::<u8>::with_capacity(max_size);
-                buf.resize(max_size, 0);
+            let max_size = max_size.unwrap_or(2048);
+            let mut buf = Vec::<u8>::with_capacity(max_size);
+            buf.resize(max_size, 0);
 
-                let stdout = child
-                    .stdout
-                    .as_mut()
-                    .ok_or(io::Error::new(io::ErrorKind::Other, "never"))?;
-                let n = stdout.read(&mut buf)?;
-                let stdout_bytes = buf[..n].to_vec();
+            let stdout = child
+                .stdout
+                .as_mut()
+                .ok_or(io::Error::new(io::ErrorKind::Other, "never"))?;
+            let n = stdout.read(&mut buf)?;
+            let stdout_bytes = buf[..n].to_vec();
 
-                let stderr = child
-                    .stderr
-                    .as_mut()
-                    .ok_or(io::Error::new(io::ErrorKind::Other, "never"))?;
-                let n = stderr.read(&mut buf)?;
-                let stderr_bytes = buf[..n].to_vec();
+            let stderr = child
+                .stderr
+                .as_mut()
+                .ok_or(io::Error::new(io::ErrorKind::Other, "never"))?;
+            let n = stderr.read(&mut buf)?;
+            let stderr_bytes = buf[..n].to_vec();
 
-                Ok(SpawnAsyncOutput {
-                    stdout: stdout_bytes,
-                    stderr: stderr_bytes,
-                    exit_status,
-                })
+            Ok(SpawnAsyncOutput {
+                stdout: stdout_bytes,
+                stderr: stderr_bytes,
+                exit_status,
             })
-            .await
+        })
+        .await
     }
 }
