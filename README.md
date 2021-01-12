@@ -9,12 +9,7 @@
 ## Dev
 
 ```
-cargo test --all-features --all -- --nocapture && \
-cargo clippy --all -- -D clippy::all && \
+cargo test --all --all-features -- --nocapture && \
+cargo +nightly clippy --all --all-features -- -D clippy::all && \
 cargo fmt --all -- --check
-```
-
-```
-cargo build-all-features
-cargo test-all-features --all
 ```

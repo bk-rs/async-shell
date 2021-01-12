@@ -32,7 +32,7 @@ impl ChildExt for Command {
         max_size: Option<usize>,
     ) -> io::Result<SpawnAsyncOutput> {
         let command = self.stdout(Stdio::piped()).stderr(Stdio::piped());
-        if let Some(_) = stdin {
+        if stdin.is_some() {
             command.stdin(Stdio::piped());
         }
 
@@ -48,7 +48,7 @@ impl ChildExt for Command {
             }
 
             let exit_status =
-                match child.wait_timeout(timeout.unwrap_or(Duration::from_millis(1000)))? {
+                match child.wait_timeout(timeout.unwrap_or_else(|| Duration::from_millis(1000)))? {
                     Some(exit_status) => exit_status,
                     None => {
                         // child hasn't exited yet
@@ -60,20 +60,20 @@ impl ChildExt for Command {
                 };
 
             let max_size = max_size.unwrap_or(2048);
-            let mut buf = Vec::<u8>::with_capacity(max_size);
+            let mut buf = vec![0; max_size];
             buf.resize(max_size, 0);
 
             let stdout = child
                 .stdout
                 .as_mut()
-                .ok_or(io::Error::new(io::ErrorKind::Other, "never"))?;
+                .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "never"))?;
             let n = stdout.read(&mut buf)?;
             let stdout_bytes = buf[..n].to_vec();
 
             let stderr = child
                 .stderr
                 .as_mut()
-                .ok_or(io::Error::new(io::ErrorKind::Other, "never"))?;
+                .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "never"))?;
             let n = stderr.read(&mut buf)?;
             let stderr_bytes = buf[..n].to_vec();
 

@@ -13,7 +13,7 @@ use futures_lite::future::block_on;
 
 use async_shell::ChildExt;
 
-fn main() -> io::Result<()> {
+fn main() {
     let ex = Executor::new();
     let ex = Arc::new(ex);
     let local_ex = LocalExecutor::new();
@@ -39,8 +39,6 @@ fn main() -> io::Result<()> {
         });
 
     println!("ret_vec: {:?}", ret_vec);
-
-    Ok(())
 }
 
 async fn run(ex: Arc<Executor>) -> io::Result<()> {
